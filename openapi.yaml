@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: Product Service API
+  description: RS School AWS course - Task 3 - Product Service
+  version: 1.0.0
+servers:
+  - url: https://{apiId}.execute-api.{region}.amazonaws.com/{stage}
+    description: Deployed API Gateway endpoint
+    variables:
+      apiId:
+        default: REPLACE_WITH_DEPLOYED_API_ID
+        description: The API Gateway REST API ID printed by `cdk deploy` (ApiBaseUrl output).
+      region:
+        default: eu-central-1
+      stage:
+        default: dev
+paths:
+  /products:
+    get:
+      summary: Get the full list of products
+      operationId: getProductsList
+      tags:
+        - Products
+      responses:
+        "200":
+          description: A list of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+  /products/{productId}:
+    get:
+      summary: Get a single product by id
+      operationId: getProductsById
+      tags:
+        - Products
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Product identifier (UUID).
+      responses:
+        "200":
+          description: The matching product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: productId path parameter missing or empty
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "404":
+          description: Product with the given id was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+components:
+  schemas:
+    Product:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - price
+        - count
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "7567ec4b-b10c-48c5-9345-fc73c48a80aa"
+        title:
+          type: string
+          example: Wireless Headphones
+        description:
+          type: string
+          example: Over-ear noise-cancelling Bluetooth headphones
+        price:
+          type: number
+          format: float
+          minimum: 0
+          example: 149
+        count:
+          type: integer
+          minimum: 0
+          example: 14
+    ErrorMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: Product not found
