@@ -13,17 +13,22 @@
     "synth": "cdk synth",
     "deploy": "cdk deploy",
     "destroy": "cdk destroy",
-    "bootstrap": "cdk bootstrap"
+    "bootstrap": "cdk bootstrap",
+    "seed": "tsx scripts/seed.ts"
   },
   "engines": {
     "node": ">=20.11.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.658.0",
+    "@aws-sdk/lib-dynamodb": "^3.658.0",
     "@types/aws-lambda": "^8.10.140",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.14.0",
     "aws-cdk": "^2.250.0",
     "aws-cdk-lib": "^2.250.0",
+    "aws-sdk-client-mock": "^4.1.0",
+    "aws-sdk-client-mock-jest": "^4.1.0",
     "constructs": "^10.6.0",
     "esbuild": "^0.21.5",
     "jest": "^29.7.0",

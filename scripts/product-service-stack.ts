@@ -2,15 +2,29 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { App, CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
 import { Cors, LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
+import { Table } from "aws-cdk-lib/aws-dynamodb";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
+import { AWS_PRODUCTS_TABLE, AWS_REGION, AWS_STOCKS_TABLE } from "../src/const/consts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 
 export class ProductServiceStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    const productsTable = Table.fromTableName(
+      this,
+      "ProductsTable",
+      AWS_PRODUCTS_TABLE
+    );
+    const stocksTable = Table.fromTableName(
+      this,
+      "StocksTable",
+      AWS_STOCKS_TABLE
+    );
 
     const sharedFnProps = {
       runtime: Runtime.NODEJS_22_X,
@@ -21,23 +35,39 @@ export class ProductServiceStack extends Stack {
         minify: true,
         sourceMap: true,
         target: "es2022",
+        externalModules: ["@aws-sdk/*"],
       },
       environment: {
         LOG_LEVEL: "info",
+        AWS_PRODUCTS_TABLE,
+        AWS_STOCKS_TABLE,
       },
     };
 
     const getProductsListFn = new NodejsFunction(this, "GetProductsList", {
       ...sharedFnProps,
       functionName: "getProductsList",
-      entry: path.join(__dirname, "../src/products/getProductsList.ts"),
+      entry: path.join(__dirname, "../src/product_service/getProductsList.ts"),
     });
 
     const getProductsByIdFn = new NodejsFunction(this, "GetProductsById", {
       ...sharedFnProps,
       functionName: "getProductsById",
-      entry: path.join(__dirname, "../src/products/getProductsById.ts"),
+      entry: path.join(__dirname, "../src/product_service/getProductsById.ts"),
     });
+
+    const createProductFn = new NodejsFunction(this, "CreateProduct", {
+      ...sharedFnProps,
+      functionName: "createProduct",
+      entry: path.join(__dirname, "../src/product_service/createProduct.ts"),
+    });
+
+    productsTable.grantReadData(getProductsListFn);
+    stocksTable.grantReadData(getProductsListFn);
+    productsTable.grantReadData(getProductsByIdFn);
+    stocksTable.grantReadData(getProductsByIdFn);
+    productsTable.grantWriteData(createProductFn);
+    stocksTable.grantWriteData(createProductFn);
 
     const api = new RestApi(this, "ProductServiceApi", {
       restApiName: "Product Service API",
@@ -45,13 +75,14 @@ export class ProductServiceStack extends Stack {
       deployOptions: { stageName: "dev" },
       defaultCorsPreflightOptions: {
         allowOrigins: Cors.ALL_ORIGINS,
-        allowMethods: ["GET", "OPTIONS"],
+        allowMethods: ["GET", "POST", "OPTIONS"],
         allowHeaders: ["Content-Type"],
       },
     });
 
     const productsResource = api.root.addResource("products");
     productsResource.addMethod("GET", new LambdaIntegration(getProductsListFn));
+    productsResource.addMethod("POST", new LambdaIntegration(createProductFn));
 
     const productByIdResource = productsResource.addResource("{productId}");
     productByIdResource.addMethod(
@@ -74,6 +105,11 @@ export class ProductServiceStack extends Stack {
       value: `${api.url}products/7567ec4b-b10c-48c5-9345-fc73c48a80aa`,
       description: "GET /products/{productId} sample URL",
     });
+
+    new CfnOutput(this, "CreateProductUrl", {
+      value: `${api.url}products`,
+      description: "POST /products",
+    });
   }
 }
 
@@ -82,7 +118,7 @@ const app = new App();
 try {
   new ProductServiceStack(app, "ProductServiceStack", {
     env: {
-      region: "eu-central-1",
+      region: AWS_REGION,
     },
   });
 } catch (e) {
