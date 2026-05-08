@@ -1,0 +1,3 @@
+{
+  "app": "npx tsx scripts/product-service-stack.ts"
+}
