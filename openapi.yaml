@@ -104,6 +104,39 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorMessage"
+  /import:
+    get:
+      summary: Get a presigned S3 URL to upload a products CSV
+      operationId: importProductsFile
+      tags:
+        - Import
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Filename of the CSV to upload (becomes the S3 key under uploaded/).
+      responses:
+        "200":
+          description: Presigned S3 PUT URL as plain text
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "https://uploaded-shop-data.s3.eu-central-1.amazonaws.com/uploaded/products.csv?X-Amz-Algorithm=..."
+        "400":
+          description: Missing 'name' query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
 components:
   schemas:
     Product:

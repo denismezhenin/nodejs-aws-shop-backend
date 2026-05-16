@@ -1,12 +1,12 @@
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { App, CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
+import { CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
 import { Cors, LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
-import { AWS_PRODUCTS_TABLE, AWS_REGION, AWS_STOCKS_TABLE } from "../src/const/consts";
+import { AWS_PRODUCTS_TABLE, AWS_STOCKS_TABLE } from "../src/const/consts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -111,16 +111,4 @@ export class ProductServiceStack extends Stack {
       description: "POST /products",
     });
   }
-}
-
-const app = new App();
-
-try {
-  new ProductServiceStack(app, "ProductServiceStack", {
-    env: {
-      region: AWS_REGION,
-    },
-  });
-} catch (e) {
-  console.log(e);
 }

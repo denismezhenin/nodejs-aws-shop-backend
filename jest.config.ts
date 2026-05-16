@@ -16,6 +16,7 @@ const config: Config = {
   },
   collectCoverageFrom: [
     "src/product_service/**/*.ts",
+    "src/import_service/**/*.ts",
     "src/db/**/*.ts",
     "src/utils/**/*.ts",
   ],
