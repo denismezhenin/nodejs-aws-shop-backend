@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Product Service API
-  description: RS School AWS course - Task 3 - Product Service
+  description: RS School AWS course - Task 4 - Product Service with DynamoDB
   version: 1.0.0
 servers:
   - url: https://{apiId}.execute-api.{region}.amazonaws.com/{stage}
@@ -30,6 +30,42 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Product"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+    post:
+      summary: Create a new product
+      operationId: createProduct
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductInput"
+      responses:
+        "201":
+          description: The created product (with generated id and stock count)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Invalid JSON body or failed input validation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
   /products/{productId}:
     get:
       summary: Get a single product by id
@@ -62,6 +98,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorMessage"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
 components:
   schemas:
     Product:
@@ -84,8 +126,29 @@ components:
           type: string
           example: Over-ear noise-cancelling Bluetooth headphones
         price:
-          type: number
-          format: float
+          type: integer
+          minimum: 0
+          example: 149
+        count:
+          type: integer
+          minimum: 0
+          example: 14
+    CreateProductInput:
+      type: object
+      required:
+        - title
+        - price
+        - count
+      properties:
+        title:
+          type: string
+          minLength: 1
+          example: Wireless Headphones
+        description:
+          type: string
+          example: Over-ear noise-cancelling Bluetooth headphones
+        price:
+          type: integer
           minimum: 0
           example: 149
         count:

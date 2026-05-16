@@ -14,7 +14,11 @@ const config: Config = {
       },
     ],
   },
-  collectCoverageFrom: ["src/products/**/*.ts"],
+  collectCoverageFrom: [
+    "src/product_service/**/*.ts",
+    "src/db/**/*.ts",
+    "src/utils/**/*.ts",
+  ],
   coverageDirectory: "coverage",
   clearMocks: true,
 };
