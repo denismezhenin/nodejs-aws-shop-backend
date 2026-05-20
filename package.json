@@ -11,7 +11,7 @@
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "cdk": "cdk",
     "synth": "cdk synth",
-    "deploy": "cdk deploy",
+    "deploy": "cdk deploy --all",
     "destroy": "cdk destroy",
     "bootstrap": "cdk bootstrap",
     "seed": "tsx scripts/seed.ts"
