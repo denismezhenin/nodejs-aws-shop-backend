@@ -35,9 +35,6 @@ export class ImportServiceStack extends Stack {
 
     const { catalogItemsQueue, basicAuthorizerFnArn } = props;
 
-    // Import the authorizer lambda by ARN so CDK doesn't try to auto-grant
-    // invoke permission (which would reference the import API ARN and create
-    // a cross-stack cycle). Permission is granted in AuthorizationServiceStack.
     const basicAuthorizerFn = LambdaFunction.fromFunctionArn(
       this,
       "BasicAuthorizerFn",
