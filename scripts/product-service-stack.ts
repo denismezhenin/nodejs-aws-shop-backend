@@ -4,23 +4,14 @@ import { CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
 import { Cors, LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
-import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
-import { SubscriptionFilter, Topic } from "aws-cdk-lib/aws-sns";
-import { EmailSubscription } from "aws-cdk-lib/aws-sns-subscriptions";
-import { Queue } from "aws-cdk-lib/aws-sqs";
 import { Construct } from "constructs";
 import { AWS_PRODUCTS_TABLE, AWS_STOCKS_TABLE } from "../src/const/consts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const PRIMARY_NOTIFICATION_EMAIL = "arctik@tut.by";
-const HIGH_PRICE_NOTIFICATION_EMAIL = "dzianismiazhenin@gmail.com";
-const HIGH_PRICE_THRESHOLD = 100;
 
 export class ProductServiceStack extends Stack {
-  public readonly catalogItemsQueue: Queue;
-
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
@@ -33,30 +24,6 @@ export class ProductServiceStack extends Stack {
       this,
       "StocksTable",
       AWS_STOCKS_TABLE
-    );
-
-    this.catalogItemsQueue = new Queue(this, "CatalogItemsQueue", {
-      queueName: "catalogItemsQueue",
-      visibilityTimeout: Duration.seconds(60),
-    });
-
-    const createProductTopic = new Topic(this, "CreateProductTopic", {
-      topicName: "createProductTopic",
-      displayName: "New product notifications",
-    });
-
-    createProductTopic.addSubscription(
-      new EmailSubscription(PRIMARY_NOTIFICATION_EMAIL)
-    );
-
-    createProductTopic.addSubscription(
-      new EmailSubscription(HIGH_PRICE_NOTIFICATION_EMAIL, {
-        filterPolicy: {
-          price: SubscriptionFilter.numericFilter({
-            greaterThanOrEqualTo: HIGH_PRICE_THRESHOLD,
-          }),
-        },
-      })
     );
 
     const sharedFnProps = {
@@ -95,35 +62,12 @@ export class ProductServiceStack extends Stack {
       entry: path.join(__dirname, "../src/product_service/createProduct.ts"),
     });
 
-    const catalogBatchProcessFn = new NodejsFunction(this, "CatalogBatchProcess", {
-      ...sharedFnProps,
-      functionName: "catalogBatchProcess",
-      entry: path.join(
-        __dirname,
-        "../src/product_service/catalogBatchProcess.ts"
-      ),
-      environment: {
-        ...sharedFnProps.environment,
-        CREATE_PRODUCT_TOPIC_ARN: createProductTopic.topicArn,
-      },
-    });
-
-    catalogBatchProcessFn.addEventSource(
-      new SqsEventSource(this.catalogItemsQueue, {
-        batchSize: 5,
-        reportBatchItemFailures: true,
-      })
-    );
-
     productsTable.grantReadData(getProductsListFn);
     stocksTable.grantReadData(getProductsListFn);
     productsTable.grantReadData(getProductsByIdFn);
     stocksTable.grantReadData(getProductsByIdFn);
     productsTable.grantWriteData(createProductFn);
     stocksTable.grantWriteData(createProductFn);
-    productsTable.grantWriteData(catalogBatchProcessFn);
-    stocksTable.grantWriteData(catalogBatchProcessFn);
-    createProductTopic.grantPublish(catalogBatchProcessFn);
 
     const api = new RestApi(this, "ProductServiceApi", {
       restApiName: "Product Service API",
@@ -165,16 +109,6 @@ export class ProductServiceStack extends Stack {
     new CfnOutput(this, "CreateProductUrl", {
       value: `${api.url}products`,
       description: "POST /products",
-    });
-
-    new CfnOutput(this, "CatalogItemsQueueUrl", {
-      value: this.catalogItemsQueue.queueUrl,
-      description: "URL of the catalogItemsQueue SQS queue",
-    });
-
-    new CfnOutput(this, "CreateProductTopicArn", {
-      value: createProductTopic.topicArn,
-      description: "ARN of the createProductTopic SNS topic",
     });
   }
 }

@@ -6,7 +6,6 @@ import { Runtime } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Bucket, EventType } from "aws-cdk-lib/aws-s3";
 import { LambdaDestination } from "aws-cdk-lib/aws-s3-notifications";
-import { IQueue } from "aws-cdk-lib/aws-sqs";
 import { Construct } from "constructs";
 import {
   AWS_IMPORT_BUCKET,
@@ -16,15 +15,9 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export interface ImportServiceStackProps extends StackProps {
-  catalogItemsQueue: IQueue;
-}
-
 export class ImportServiceStack extends Stack {
-  constructor(scope: Construct, id: string, props: ImportServiceStackProps) {
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
-
-    const { catalogItemsQueue } = props;
 
     const bucket = Bucket.fromBucketName(
       this,
@@ -41,7 +34,7 @@ export class ImportServiceStack extends Stack {
         minify: true,
         sourceMap: true,
         target: "es2022",
-        externalModules: ["@aws-sdk/*"],
+        externalModules: ["@aws-sdk/client-s3"],
       },
       environment: {
         LOG_LEVEL: "info",
@@ -61,17 +54,12 @@ export class ImportServiceStack extends Stack {
       ...sharedFnProps,
       functionName: "importFileParser",
       entry: path.join(__dirname, "../src/import_service/importFileParser.ts"),
-      environment: {
-        ...sharedFnProps.environment,
-        CATALOG_ITEMS_QUEUE_URL: catalogItemsQueue.queueUrl,
-      },
     });
 
     bucket.grantPut(importProductsFileFn, `${IMPORT_UPLOAD_PREFIX}*`);
     bucket.grantRead(importFileParserFn, `${IMPORT_UPLOAD_PREFIX}*`);
     bucket.grantWrite(importFileParserFn, `${IMPORT_PARSED_PREFIX}*`);
     bucket.grantDelete(importFileParserFn, `${IMPORT_UPLOAD_PREFIX}*`);
-    catalogItemsQueue.grantSendMessages(importFileParserFn);
 
     bucket.addEventNotification(
       EventType.OBJECT_CREATED,

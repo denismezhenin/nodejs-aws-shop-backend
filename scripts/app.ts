@@ -5,11 +5,10 @@ import { ProductServiceStack } from "./product-service-stack";
 
 const app = new App();
 
-const productStack = new ProductServiceStack(app, "ProductServiceStack", {
+new ProductServiceStack(app, "ProductServiceStack", {
   env: { region: AWS_REGION },
 });
 
 new ImportServiceStack(app, "ImportServiceStack", {
   env: { region: AWS_REGION },
-  catalogItemsQueue: productStack.catalogItemsQueue,
 });
