@@ -1,6 +1,7 @@
 import { App } from "aws-cdk-lib";
 import { AWS_REGION } from "../src/const/consts";
 import { AuthorizationServiceStack } from "./authorization-service-stack";
+import { CartServiceStack } from "./cart-service-stack";
 import { ImportServiceStack } from "./import-service-stack";
 import { ProductServiceStack } from "./product-service-stack";
 
@@ -20,4 +21,11 @@ new ImportServiceStack(app, "ImportServiceStack", {
   env: { region: AWS_REGION },
   catalogItemsQueue: productStack.catalogItemsQueue,
   basicAuthorizerFnArn: authStack.basicAuthorizerFn.functionArn,
+});
+
+new CartServiceStack(app, "CartServiceStack", {
+  env: {
+    region: AWS_REGION,
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+  },
 });
