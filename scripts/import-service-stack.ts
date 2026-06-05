@@ -1,8 +1,16 @@
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
-import { Cors, LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
-import { Runtime } from "aws-cdk-lib/aws-lambda";
+import {
+  AuthorizationType,
+  Cors,
+  IdentitySource,
+  LambdaIntegration,
+  ResponseType,
+  RestApi,
+  TokenAuthorizer,
+} from "aws-cdk-lib/aws-apigateway";
+import { Function as LambdaFunction, Runtime } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Bucket, EventType } from "aws-cdk-lib/aws-s3";
 import { LambdaDestination } from "aws-cdk-lib/aws-s3-notifications";
@@ -18,13 +26,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export interface ImportServiceStackProps extends StackProps {
   catalogItemsQueue: IQueue;
+  basicAuthorizerFnArn: string;
 }
 
 export class ImportServiceStack extends Stack {
   constructor(scope: Construct, id: string, props: ImportServiceStackProps) {
     super(scope, id, props);
 
-    const { catalogItemsQueue } = props;
+    const { catalogItemsQueue, basicAuthorizerFnArn } = props;
+
+    const basicAuthorizerFn = LambdaFunction.fromFunctionArn(
+      this,
+      "BasicAuthorizerFn",
+      basicAuthorizerFnArn
+    );
 
     const bucket = Bucket.fromBucketName(
       this,
@@ -86,8 +101,29 @@ export class ImportServiceStack extends Stack {
       defaultCorsPreflightOptions: {
         allowOrigins: Cors.ALL_ORIGINS,
         allowMethods: ["GET", "OPTIONS"],
-        allowHeaders: ["Content-Type"],
+        allowHeaders: ["Content-Type", "Authorization"],
       },
+    });
+
+    const corsResponseHeaders = {
+      "Access-Control-Allow-Origin": "'*'",
+      "Access-Control-Allow-Headers": "'*'",
+    };
+    api.addGatewayResponse("Unauthorized", {
+      type: ResponseType.UNAUTHORIZED,
+      statusCode: "401",
+      responseHeaders: corsResponseHeaders,
+    });
+    api.addGatewayResponse("AccessDenied", {
+      type: ResponseType.ACCESS_DENIED,
+      statusCode: "403",
+      responseHeaders: corsResponseHeaders,
+    });
+
+    const authorizer = new TokenAuthorizer(this, "BasicTokenAuthorizer", {
+      handler: basicAuthorizerFn,
+      identitySource: IdentitySource.header("Authorization"),
+      resultsCacheTtl: Duration.seconds(0),
     });
 
     const importResource = api.root.addResource("import");
@@ -96,6 +132,8 @@ export class ImportServiceStack extends Stack {
       new LambdaIntegration(importProductsFileFn),
       {
         requestParameters: { "method.request.querystring.name": true },
+        authorizationType: AuthorizationType.CUSTOM,
+        authorizer,
       }
     );
 
