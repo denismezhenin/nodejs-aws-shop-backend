@@ -21,6 +21,8 @@ import { OrderModule } from './order/order.module';
       autoLoadEntities: true,
       synchronize: false,
       logging: false,
+      retryAttempts: 30,
+      retryDelay: 5_000,
       extra: {
         max: 2,
         idleTimeoutMillis: 10_000,
