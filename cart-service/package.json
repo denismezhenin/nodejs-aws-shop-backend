@@ -1,0 +1,10 @@
+{
+  "name": "cart-service",
+  "private": true,
+  "type": "commonjs",
+  "dependencies": {
+    "pg": "^8.13.0",
+    "typeorm": "^0.3.20",
+    "reflect-metadata": "^0.1.14"
+  }
+}
