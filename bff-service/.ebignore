@@ -1,0 +1,9 @@
+# EB builds the Docker image from this dir; ship only the build inputs.
+node_modules
+dist
+.env
+.env.local
+.git
+.elasticbeanstalk
+npm-debug.log
+*.tsbuildinfo

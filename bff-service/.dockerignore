@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+.env.local
+.git
+.elasticbeanstalk
+npm-debug.log
+*.tsbuildinfo
+README.md
