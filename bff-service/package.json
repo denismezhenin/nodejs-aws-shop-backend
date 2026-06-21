@@ -1,0 +1,22 @@
+{
+  "name": "bff-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend For Frontend - proxies requests to product and cart services based on .env URL map",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.5"
+  }
+}
